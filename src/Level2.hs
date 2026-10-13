@@ -16,10 +16,17 @@ data Nat = Zero | Suc Nat
   deriving (Eq, Show)
 
 makeNat :: Int -> Nat
-makeNat = todo "2.1 make"
+makeNat n = go n Zero
+  where
+    go n' acc
+      | n' < 0    = undefined
+      | n' == 0   = acc
+      | otherwise = go (n' - 1) (Suc acc)
 
 foldNat :: (a -> a) -> a -> Nat -> a
-foldNat = todo "2.1 fold"
+foldNat f z n = case n of
+  Zero -> z
+  Suc n' -> f $ foldNat f z n'
 
 
 -- 2.2. Другое бинарное дерево.
@@ -33,9 +40,12 @@ data BinTree a = Empty | BinNode (BinTree a) a (BinTree a)
   deriving (Eq, Show)
 
 mapBinTree :: (a -> b) -> BinTree a -> BinTree b
-mapBinTree = todo "2.2 map"
+mapBinTree f t = case t of
+  Empty -> Empty
+  BinNode l x r -> BinNode (mapBinTree f l) (f x) (mapBinTree f r)
 
-bangAll t = todo "2.2 bang"
+bangAll :: BinTree (BinTree Int) -> BinTree (BinTree String)
+bangAll t = mapBinTree (mapBinTree (\n -> show n ++ "!")) t
 
 
 -- 2.3. Лексикографическое сравнение.
@@ -47,8 +57,12 @@ bangAll t = todo "2.2 bang"
 -- не передавайте целые списки стандартному (<) или compare.
 
 lexLess :: Ord a => [a] -> [a] -> Bool
-lexLess = todo "2.3"
-
+lexLess [] ys = case ys of
+  []  -> False
+  _   -> True
+lexLess (x:xs) t = case t of
+  []      ->  False
+  (y:ys)  ->  if x == y then lexLess xs ys else x < y
 
 -- 2.4. Цифры.
 --
@@ -58,8 +72,13 @@ lexLess = todo "2.3"
 -- без перевода числа в строку.
 
 digits :: Int -> [Int]
-digits = todo "2.4"
-
+digits 0 = [0]
+digits n = go n []
+  where 
+    go n' a 
+      | n < 0     = undefined
+      | n' == 0   = a
+      | otherwise = go (n' `div` 10) ((n' `mod` 10):a)
 
 -- 2.5. Числа Фибоначчи и списки.
 --
@@ -75,10 +94,16 @@ fibs :: [Integer]
 fibs = 0 : 1 : zipWith (+) fibs (drop 1 fibs)
 
 isFib :: Integer -> Bool
-isFib = todo "2.5 is"
+isFib n = go n fibs
+  where 
+    go _  []        = False
+    go n' (x:xs)
+      | n' < x              = False
+      | n' == x             = True
+      | otherwise           = go n' xs
 
 countFibs :: [Integer] -> Int
-countFibs = todo "2.5 count"
+countFibs xs = foldl (+) 0 $ map ((\b -> if b then 1 else 0) . isFib) xs
 
 
 -- 2.6. Скользящее окно.
@@ -90,7 +115,16 @@ countFibs = todo "2.5 count"
 -- Сигнатуру не меняйте.
 
 withWindow :: [a] -> Int -> [[a]]
-withWindow = todo "2.6"
+withWindow xs n = go n ys ys
+  where
+    ys = (map (:[]) xs)
+    go :: Int -> [[a]] -> [[a]] -> [[a]]
+    go n' mat zs
+      | n' <= 0       = undefined
+      | n' == 1       = mat
+      | otherwise     = go (n' - 1) (map (uncurry (++)) $ zip mat zs') zs'
+      where
+        zs'           = drop 1 zs
 
 
 -- 2.7. Сохраните проверенные опции в типе.
@@ -115,4 +149,7 @@ data RawOptions = RawOptions Bool (Maybe Format) (Maybe FilePath)
   deriving (Eq, Show)
 
 parseOptions :: RawOptions -> Maybe Options
-parseOptions = todo "2.7"
+parseOptions (RawOptions True Nothing Nothing)            = Just Help 
+parseOptions (RawOptions False (Just f) (Just t))         = Just $ Run f $ File t 
+parseOptions (RawOptions False (Just f) _)                = Just $ Run f Stdout
+parseOptions _                                            = Nothing
